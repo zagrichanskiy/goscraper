@@ -18,26 +18,28 @@ type DownloadObj struct {
 
 // Config represetns configuration in json.
 type Config struct {
-	RootURL  string
-	Blade1   string
-	Blade2   string
-	Blade3   string
-	Sdk      string
-	SdkReg   string
-	Download DownloadObj
-	Updated  string
+	RootURL   string
+	LatestURL string
+	Blade1    string
+	Blade2    string
+	Blade3    string
+	Sdk       string
+	SdkReg    string
+	Download  DownloadObj
+	Updated   string
 }
 
 var defaultConfig = Config{
-	RootURL: "http://dehil-ae03.debads.europe.delphiauto.net:82/platforms/csp/csp/",
-	Blade1:  "csp-image-blade-i-intel-corei7-64-dom0.wic",
-	Blade2:  "csp-image-blade-ii-intel-corei7-64-dom0.wic",
-	Blade3:  "csp-image-blade-iii-intel-corei7-64-dom0.wic",
-	Sdk:     "sdk",
-	SdkReg:  "\\.sh$",
+	RootURL:   "http://dehil-ae03.debads.europe.delphiauto.net:82/platforms/csp/csp/",
+	LatestURL: "http://dehil-ae03.debads.europe.delphiauto.net:82/platforms/csp/csp/latest-release/",
+	Blade1:    "csp-image-blade-i-intel-corei7-64-dom0.wic",
+	Blade2:    "csp-image-blade-ii-intel-corei7-64-dom0.wic",
+	Blade3:    "csp-image-blade-iii-intel-corei7-64-dom0.wic",
+	Sdk:       "sdk",
+	SdkReg:    "\\.sh$",
 	Download: DownloadObj{
-		Blade1: false,
-		Blade2: false,
+		Blade1: true,
+		Blade2: true,
 		Blade3: true,
 		Sdk:    false}}
 
