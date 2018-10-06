@@ -76,7 +76,7 @@ func download(path string, latest string, c scraper.Config) {
 	fmt.Println("Downloading")
 
 	downloadDir := filepath.Join(path, latest)
-	if err := os.Mkdir(downloadDir, 0775); !os.IsExist(err) {
+	if err := os.Mkdir(downloadDir, 0775); err != nil && !os.IsExist(err) {
 		fmt.Println("Can't create download directory:", downloadDir)
 		panic(err)
 	}
