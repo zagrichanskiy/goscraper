@@ -8,43 +8,34 @@ import (
 	"os"
 )
 
-// DownloadObj in the Config struct for json.
-type DownloadObj struct {
-	Blade1 bool
-	Blade2 bool
-	Blade3 bool
-	Sdk    bool
+// DownloadInfo what to download.
+type DownloadInfo struct {
+	Download bool
+	File     string
 }
 
 // Config represetns configuration in json.
 type Config struct {
 	RootURL   string
 	LatestURL string
-	Blade1    string
-	Blade2    string
-	Blade3    string
-	Sdk       string
-	SdkReg    string
-	Download  DownloadObj
+	Blade1    DownloadInfo
+	Blade2    DownloadInfo
+	Blade3    DownloadInfo
 	Updated   string
 }
 
 var defaultConfig = Config{
 	RootURL:   "http://dehil-ae03.debads.europe.delphiauto.net:82/platforms/csp/csp/",
 	LatestURL: "http://dehil-ae03.debads.europe.delphiauto.net:82/platforms/csp/csp/latest-release/",
-	Blade1:    "csp-image-blade-i-intel-corei7-64-dom0.wic",
-	Blade2:    "csp-image-blade-ii-intel-corei7-64-dom0.wic",
-	Blade3:    "csp-image-blade-iii-intel-corei7-64-dom0.wic",
-	// Blade1: "csp-image-blade-i-intel-corei7-64-dom0.wic.md5",
-	// Blade2: "csp-image-blade-ii-intel-corei7-64-dom0.wic.md5",
-	// Blade3: "csp-image-blade-iii-intel-corei7-64-dom0.wic.md5",
-	Sdk:    "sdk",
-	SdkReg: "\\.sh$",
-	Download: DownloadObj{
-		Blade1: true,
-		Blade2: true,
-		Blade3: true,
-		Sdk:    false}}
+	Blade1: DownloadInfo{
+		Download: true,
+		File:     "csp-image-blade-i-intel-corei7-64-dom0.wic.md5"},
+	Blade2: DownloadInfo{
+		Download: true,
+		File:     "csp-image-blade-ii-intel-corei7-64-dom0.wic.md5"},
+	Blade3: DownloadInfo{
+		Download: true,
+		File:     "csp-image-blade-iii-intel-corei7-64-dom0.wic.md5"}}
 
 // InitConfig opens configuration file or creates new.
 func InitConfig(path string) Config {

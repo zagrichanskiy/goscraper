@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -27,7 +26,7 @@ func checkProgramDir(path string) {
 			panic(err)
 		}
 	} else {
-		fmt.Println("Program directory is ", path)
+		fmt.Println("Program directory is", path)
 	}
 }
 
@@ -67,70 +66,42 @@ func fillUrls(r *http.Response, urls *[]string) {
 	}
 }
 
-// Status of downloading.
-type Status struct {
-	file string
-	ok   bool
-}
-
-func download(path string, latest string, c scraper.Config) {
+func download(dir string, c scraper.Config) {
 	fmt.Println("Downloading")
 
-	downloadDir := filepath.Join(path, latest)
-	if err := os.Mkdir(downloadDir, 0775); err != nil && !os.IsExist(err) {
-		fmt.Println("Can't create download directory:", downloadDir)
-		panic(err)
-	}
-
-	ch := make(chan Status)
-	tasks := 0
-	runTasks := func(ch chan Status, t *int, toDownload bool, file string) {
-		if toDownload {
-			*t++
-			filePath := filepath.Join(downloadDir, file)
-			link := c.LatestURL + file
-			fmt.Println("Downloading of", file)
-			go downloadLink(ch, filePath, link)
+	// Initialization.
+	ch := make(chan scraper.Status)
+	tasks := make([]scraper.Task, 0)
+	addTask := func(tasks *[]scraper.Task, download bool, url string, file string) {
+		if download {
+			t := scraper.NewBladeTask(url, dir, file)
+			*tasks = append(*tasks, t)
 		}
 	}
 
-	runTasks(ch, &tasks, c.Download.Blade1, c.Blade1)
-	runTasks(ch, &tasks, c.Download.Blade2, c.Blade2)
-	runTasks(ch, &tasks, c.Download.Blade3, c.Blade3)
+	// Creating downloading tasks.
+	addTask(&tasks, c.Blade1.Download, c.LatestURL, c.Blade1.File)
+	addTask(&tasks, c.Blade2.Download, c.LatestURL, c.Blade2.File)
+	addTask(&tasks, c.Blade3.Download, c.LatestURL, c.Blade3.File)
 
-	for tasks > 0 {
-		status := <-ch
-		fmt.Println(status.file, "downloading status:", status.ok)
-		tasks--
+	// Invoking tasks.
+	for _, task := range tasks {
+		go task.Do(ch)
+	}
+
+	// Waiting for tasks to finish.
+	for range tasks {
+		s := <-ch
+		switch {
+		case s.Ok:
+			fmt.Println("Downloaded: ", s.Message)
+		case !s.Ok:
+			fmt.Println("Not downloaded: ", s.Message)
+			// TODO: Handle download errors.
+		}
 	}
 
 	fmt.Println("Downloading is done")
-}
-
-func downloadLink(ch chan Status, file string, link string) {
-	resp, err := http.Get(link)
-	if err != nil {
-		fmt.Printf("Can't open link %s: %v\n", link, err)
-		ch <- Status{file, false}
-		return
-	}
-	defer resp.Body.Close()
-
-	f, err := os.Create(file)
-	if err != nil {
-		fmt.Printf("Can't create %s: %v\n", file, err)
-		ch <- Status{file, false}
-		return
-	}
-
-	_, err = io.Copy(f, resp.Body)
-	if err != nil {
-		fmt.Printf("Can't download %s, %v\n", link, err)
-		ch <- Status{file, false}
-		return
-	}
-
-	ch <- Status{file, true}
 }
 
 func main() {
@@ -141,14 +112,19 @@ func main() {
 		ConfigPath = ProgramPath + "/" + ConfigName
 	)
 
+	// Program directory and configuration file.
 	checkProgramDir(ProgramPath)
 	c := scraper.InitConfig(ConfigPath)
 
+	// Getting the date of the latest images on server.
 	latest := getLatest(c.RootURL)
 	fmt.Println("Latest builds on server are of:", latest)
 	fmt.Println("Latest downloaded builds are of: ", c.Updated)
 
+	// Downloading images.
 	if c.Updated != latest {
-		download(ProgramPath, latest, c)
+		download(filepath.Join(ProgramPath, latest), c)
 	}
+
+	// TODO: Update 'Updated' field in config with latest info.
 }
