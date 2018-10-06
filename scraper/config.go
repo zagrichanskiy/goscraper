@@ -35,8 +35,11 @@ var defaultConfig = Config{
 	Blade1:    "csp-image-blade-i-intel-corei7-64-dom0.wic",
 	Blade2:    "csp-image-blade-ii-intel-corei7-64-dom0.wic",
 	Blade3:    "csp-image-blade-iii-intel-corei7-64-dom0.wic",
-	Sdk:       "sdk",
-	SdkReg:    "\\.sh$",
+	// Blade1: "csp-image-blade-i-intel-corei7-64-dom0.wic.md5",
+	// Blade2: "csp-image-blade-ii-intel-corei7-64-dom0.wic.md5",
+	// Blade3: "csp-image-blade-iii-intel-corei7-64-dom0.wic.md5",
+	Sdk:    "sdk",
+	SdkReg: "\\.sh$",
 	Download: DownloadObj{
 		Blade1: true,
 		Blade2: true,

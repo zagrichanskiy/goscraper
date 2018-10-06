@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -107,7 +108,28 @@ func download(path string, latest string, c scraper.Config) {
 }
 
 func downloadLink(ch chan Status, file string, link string) {
-	fmt.Println("Downloading", file, "from", link)
+	resp, err := http.Get(link)
+	if err != nil {
+		fmt.Printf("Can't open link %s: %v\n", link, err)
+		ch <- Status{file, false}
+		return
+	}
+	defer resp.Body.Close()
+
+	f, err := os.Create(file)
+	if err != nil {
+		fmt.Printf("Can't create %s: %v\n", file, err)
+		ch <- Status{file, false}
+		return
+	}
+
+	_, err = io.Copy(f, resp.Body)
+	if err != nil {
+		fmt.Printf("Can't download %s, %v\n", link, err)
+		ch <- Status{file, false}
+		return
+	}
+
 	ch <- Status{file, true}
 }
 
