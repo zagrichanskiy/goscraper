@@ -20,7 +20,7 @@ const (
 func checkProgramDir(path string) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		fmt.Println("Program directory doesn't exist, creating")
-		err = os.Mkdir(path, 0666)
+		err = os.Mkdir(path, 0775)
 		if err != nil {
 			fmt.Println("Can't create program directory")
 			panic(err)
@@ -76,7 +76,7 @@ func download(path string, latest string, c scraper.Config) {
 	fmt.Println("Downloading")
 
 	downloadDir := filepath.Join(path, latest)
-	if err := os.Mkdir(downloadDir, 0666); !os.IsExist(err) {
+	if err := os.Mkdir(downloadDir, 0775); !os.IsExist(err) {
 		fmt.Println("Can't create download directory:", downloadDir)
 		panic(err)
 	}
