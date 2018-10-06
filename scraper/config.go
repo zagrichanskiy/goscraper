@@ -18,15 +18,18 @@ type DownloadInfo struct {
 type Config struct {
 	RootURL   string
 	LatestURL string
+	SdkURL    string
 	Blade1    DownloadInfo
 	Blade2    DownloadInfo
 	Blade3    DownloadInfo
+	Sdk       DownloadInfo
 	Updated   string
 }
 
 var defaultConfig = Config{
 	RootURL:   "http://dehil-ae03.debads.europe.delphiauto.net:82/platforms/csp/csp/",
 	LatestURL: "http://dehil-ae03.debads.europe.delphiauto.net:82/platforms/csp/csp/latest-release/",
+	SdkURL:    "http://dehil-ae03.debads.europe.delphiauto.net:82/platforms/csp/csp/latest-release/sdk",
 	Blade1: DownloadInfo{
 		Download: true,
 		File:     "csp-image-blade-i-intel-corei7-64-dom0.wic.md5"},
@@ -35,7 +38,10 @@ var defaultConfig = Config{
 		File:     "csp-image-blade-ii-intel-corei7-64-dom0.wic.md5"},
 	Blade3: DownloadInfo{
 		Download: true,
-		File:     "csp-image-blade-iii-intel-corei7-64-dom0.wic.md5"}}
+		File:     "csp-image-blade-iii-intel-corei7-64-dom0.wic.md5"},
+	Sdk: DownloadInfo{
+		Download: false,
+		File:     "\\.sh$"}}
 
 // InitConfig opens configuration file or creates new.
 func InitConfig(path string) Config {
@@ -62,6 +68,7 @@ func write(path string, config Config) error {
 	if err != nil {
 		return errors.New("Can't marshal config")
 	}
+	data = append(data, '\n')
 
 	err = ioutil.WriteFile(path, data, 0666)
 	if err != nil {
