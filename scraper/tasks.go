@@ -5,6 +5,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"regexp"
+
+	"golang.org/x/net/html"
 )
 
 // Status of the task.
@@ -43,6 +46,65 @@ func (t *BladeTask) Do(ch chan Status) {
 	}
 	fmt.Println("Downloading", t.Link, "to", t.File)
 	download(ch, t.Link, t.File)
+}
+
+// SdkTask to download sdk.
+type SdkTask struct {
+	Dir  string
+	Link string
+	File string
+}
+
+// NewSdkTask creates new task for downloading sdk.
+func NewSdkTask(rootURL string, rootDir string, expr string) *SdkTask {
+	rootURL = addSlash(rootURL)
+	rootDir = addSlash(rootDir)
+
+	re, err := regexp.Compile(expr)
+	if err != nil {
+		fmt.Printf("Can't compile regular expression %s: %v\n", expr, err)
+		return nil
+	}
+
+	resp, err := http.Get(rootURL)
+	if err != nil {
+		fmt.Printf("Can't open %s: %v\n", rootURL, err)
+		return nil
+	}
+	defer resp.Body.Close()
+
+	files := make([]string, 0)
+	fillUrls(resp, &files)
+	for _, file := range files {
+		if re.MatchString(file) {
+			return &SdkTask{
+				rootDir,
+				rootURL + file,
+				rootDir + file}
+		}
+	}
+
+	fmt.Printf("Can't match pattern %s in sdk folder\n", expr)
+	return nil
+}
+
+func fillUrls(r *http.Response, urls *[]string) {
+	z := html.NewTokenizer(r.Body)
+
+	for tt := z.Next(); tt != html.ErrorToken; tt = z.Next() {
+		if tt == html.StartTagToken {
+			t := z.Token()
+
+			if t.Data == "a" {
+				for _, a := range t.Attr {
+					if a.Key == "href" {
+						*urls = append(*urls, a.Val)
+						break
+					}
+				}
+			}
+		}
+	}
 }
 
 func addSlash(s string) string {
