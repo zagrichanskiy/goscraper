@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/zagrichanskiy/goscraper/scraper"
-	"golang.org/x/net/html"
 )
 
 const (
@@ -42,28 +41,9 @@ func getLatest(url string) string {
 	defer resp.Body.Close()
 
 	urls := make([]string, 0)
-	fillUrls(resp, &urls)
+	scraper.FillUrls(resp, &urls)
 
 	return urls[len(urls)-2]
-}
-
-func fillUrls(r *http.Response, urls *[]string) {
-	z := html.NewTokenizer(r.Body)
-
-	for tt := z.Next(); tt != html.ErrorToken; tt = z.Next() {
-		if tt == html.StartTagToken {
-			t := z.Token()
-
-			if t.Data == "a" {
-				for _, a := range t.Attr {
-					if a.Key == "href" {
-						*urls = append(*urls, a.Val)
-						break
-					}
-				}
-			}
-		}
-	}
 }
 
 func download(dir string, c scraper.Config) {
@@ -71,23 +51,20 @@ func download(dir string, c scraper.Config) {
 
 	// Initialization.
 	ch := make(chan scraper.Status)
-	tasks := make([]scraper.Task, 0)
-	addTask := func(tasks *[]scraper.Task, download bool, url string, file string) {
+	tasks := make([]*scraper.Task, 0)
+	runTask := func(tasks *[]*scraper.Task, f scraper.TaskFunc, download bool, url string, file string) {
 		if download {
-			t := scraper.NewBladeTask(url, dir, file)
+			t := f(url, dir, file)
 			*tasks = append(*tasks, t)
+			go t.Do(ch)
 		}
 	}
 
-	// Creating downloading tasks.
-	addTask(&tasks, c.Blade1.Download, c.LatestURL, c.Blade1.File)
-	addTask(&tasks, c.Blade2.Download, c.LatestURL, c.Blade2.File)
-	addTask(&tasks, c.Blade3.Download, c.LatestURL, c.Blade3.File)
-
-	// Invoking tasks.
-	for _, task := range tasks {
-		go task.Do(ch)
-	}
+	// Invoking downloading tasks.
+	runTask(&tasks, scraper.NewBladeTask, c.Blade1.Download, c.LatestURL, c.Blade1.File)
+	runTask(&tasks, scraper.NewBladeTask, c.Blade2.Download, c.LatestURL, c.Blade2.File)
+	runTask(&tasks, scraper.NewBladeTask, c.Blade3.Download, c.LatestURL, c.Blade3.File)
+	runTask(&tasks, scraper.NewSdkTask, c.Sdk.Download, c.SdkURL, c.Sdk.File)
 
 	// Waiting for tasks to finish.
 	for range tasks {
@@ -102,6 +79,7 @@ func download(dir string, c scraper.Config) {
 	}
 
 	fmt.Println("Downloading is done")
+	// TODO: Return the number of downloads.
 }
 
 func main() {

@@ -16,47 +16,28 @@ type Status struct {
 	Ok      bool
 }
 
-// Task interface to run tasks.
-type Task interface {
-	Do(ch chan Status)
-}
-
-// BladeTask to download blades.
-type BladeTask struct {
+// Task to download blades.
+type Task struct {
 	Dir  string
 	Link string
 	File string
 }
 
+// TaskFunc type for tasks fabric methods.
+type TaskFunc func(string, string, string) *Task
+
 // NewBladeTask creates new task to download blade.
-func NewBladeTask(rootURL string, rootDir string, file string) *BladeTask {
+func NewBladeTask(rootURL string, rootDir string, file string) *Task {
 	rootURL = addSlash(rootURL)
 	rootDir = addSlash(rootDir)
-	return &BladeTask{
+	return &Task{
 		rootDir,
 		rootURL + file,
 		rootDir + file}
 }
 
-// Do downloads blade.
-func (t *BladeTask) Do(ch chan Status) {
-	if err := os.Mkdir(t.Dir, 0775); err != nil && !os.IsExist(err) {
-		fmt.Println("Can't create download directory:", t.Dir)
-		panic(err)
-	}
-	fmt.Println("Downloading", t.Link, "to", t.File)
-	download(ch, t.Link, t.File)
-}
-
-// SdkTask to download sdk.
-type SdkTask struct {
-	Dir  string
-	Link string
-	File string
-}
-
 // NewSdkTask creates new task for downloading sdk.
-func NewSdkTask(rootURL string, rootDir string, expr string) *SdkTask {
+func NewSdkTask(rootURL string, rootDir string, expr string) *Task {
 	rootURL = addSlash(rootURL)
 	rootDir = addSlash(rootDir)
 
@@ -74,10 +55,10 @@ func NewSdkTask(rootURL string, rootDir string, expr string) *SdkTask {
 	defer resp.Body.Close()
 
 	files := make([]string, 0)
-	fillUrls(resp, &files)
+	FillUrls(resp, &files)
 	for _, file := range files {
 		if re.MatchString(file) {
-			return &SdkTask{
+			return &Task{
 				rootDir,
 				rootURL + file,
 				rootDir + file}
@@ -88,7 +69,21 @@ func NewSdkTask(rootURL string, rootDir string, expr string) *SdkTask {
 	return nil
 }
 
-func fillUrls(r *http.Response, urls *[]string) {
+// Do downloads file.
+func (t *Task) Do(ch chan Status) {
+	if t == nil {
+		ch <- Status{"No such task", false}
+		return
+	}
+	if err := os.Mkdir(t.Dir, 0775); err != nil && !os.IsExist(err) {
+		fmt.Println("Can't create download directory:", t.Dir)
+		panic(err)
+	}
+	fmt.Println("Downloading", t.Link, "to", t.File)
+	download(ch, t.Link, t.File)
+}
+
+func FillUrls(r *http.Response, urls *[]string) {
 	z := html.NewTokenizer(r.Body)
 
 	for tt := z.Next(); tt != html.ErrorToken; tt = z.Next() {

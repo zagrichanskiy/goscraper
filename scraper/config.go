@@ -40,8 +40,9 @@ var defaultConfig = Config{
 		Download: true,
 		File:     "csp-image-blade-iii-intel-corei7-64-dom0.wic.md5"},
 	Sdk: DownloadInfo{
-		Download: false,
-		File:     "\\.sh$"}}
+		Download: true,
+		// File:     "\\.sh$"}}
+		File: "\\.host\\.manifest$"}}
 
 // InitConfig opens configuration file or creates new.
 func InitConfig(path string) Config {
